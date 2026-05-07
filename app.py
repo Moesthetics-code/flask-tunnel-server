@@ -1276,7 +1276,7 @@ def index():
 pending_responses = {}
 response_events = {}
 
-@app.route('/<subdomain>')
+@app.route('/<subdomain>', strict_slashes=False)
 @app.route('/<subdomain>/<path:path>')
 def proxy_tunnel(subdomain: str, path: str = ''):
     """Proxy via WebSocket vers le client local - VERSION CORRIGÉE."""

@@ -1329,6 +1329,7 @@ def proxy_tunnel(subdomain: str, path: str = ''):
         'headers': dict(request.headers),
         'params': dict(request.args),
         'body': request.get_data().decode('utf-8', errors='ignore') if request.get_data() else None,
+        'content_type': request.content_type,
         'ip': request.remote_addr
     }
     
@@ -1362,7 +1363,7 @@ def proxy_tunnel(subdomain: str, path: str = ''):
             
             # Construire la réponse HTTP
             content = response_data.get('content', '')
-            
+            content_type = response_data.get('content_type', None)
             # Gérer le contenu binaire
             if response_data.get('binary', False):
                 try:
@@ -1396,10 +1397,16 @@ def proxy_tunnel(subdomain: str, path: str = ''):
                 'connection', 'upgrade', 'host'
             }
             
-            headers = [
-                (name, value) for name, value in response_headers.items()
-                if name.lower() not in excluded_headers
-            ]
+            headers = []
+            for name, value in response_headers.items():
+                if name.lower() not in excluded_headers:
+                    # Réécrire Location pour inclure le préfixe du tunnel
+                    if (name.lower() == 'location'
+                            and value.startswith('/')
+                            and not value.startswith('//')
+                            and not value.startswith(f'/{subdomain}')):
+                        value = f'/{subdomain}{value}'
+                    headers.append((name, value))
             
             # Ajouter CORS si activé
             if tunnel.cors_enabled:
